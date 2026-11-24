@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cooperative Loan &amp; Purchase Desk</title>
+  <meta name="description" content="Check cooperative loan and purchase eligibility, payroll limits, and recommended amounts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Office Authentication Overlay -->
+  <div class="auth-layer" id="authLayer" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <form class="auth-card" id="authForm" onsubmit="handleAuthSubmit(event)">
+      <div class="auth-mark">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="16" r="1"></circle>
+          <rect x="3" y="10" width="18" height="12" rx="2"></rect>
+          <path d="M7 10V7a5 5 0 0 1 10 0v3"></path>
+        </svg>
+      </div>
+      <p class="eyebrow">Secure access</p>
+      <h1 id="authTitle">Office authentication</h1>
+      <p class="auth-copy">Enter your four-digit office passcode to unlock the desk.</p>
+      <label class="sr-only" for="authPin">Office passcode</label>
+      <input id="authPin" class="pin-input" type="password" inputmode="numeric" maxlength="6" autofocus placeholder="••••" autocomplete="off" />
+      <p class="form-error" id="authError">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        Incorrect PIN. Try again.
+      </p>
+      <button class="primary-button" type="submit">
+        Unlock desk
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+      <p class="secure-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <path d="m9 12 2 2 4-4"></path>
+        </svg>
+        Protected office tool (Default: 2026)
+      </p>
+    </form>
+  </div>
+
+  <main class="app-shell">
+    <!-- Sticky Masthead Navigation -->
+    <header class="masthead" id="masthead">
+      <div class="masthead-inner">
+        <div class="brand-lockup">
+          <div class="brand-mark">₦</div>
+          <div class="brand-text">
+            <div class="brand-title-wrap">
+              <h1>Cooperative desk</h1>
+              <button class="nav-facility-badge cash" id="navFacilityBadge" onclick="toggleFacilityQuick()" type="button" title="Active facility: Click to toggle">
+                <span class="facility-dot"></span>
+                <span id="navFacilityText">Cash loan</span>
+              </button>
+            </div>
+            <p>Loan &amp; purchase eligibility</p>
+          </div>
+        </div>
+        <div class="policy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+          <span>Savings ×2</span>
+          <i></i>
+          <span id="mastheadCapLabel">Deduction 40%</span>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" type="button" aria-label="Toggle theme" title="Toggle dark/light theme">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-wrap">
+      <!-- Intro row -->
+      <section class="intro-row">
+        <div>
+          <p class="eyebrow">Member assessment</p>
+          <h2>Check what a member can access.</h2>
+        </div>
+      </section>
+
+      <!-- Mode Switch -->
+      <div class="mode-switch" aria-label="Facility type">
+        <button class="active" id="btnTabCash" onclick="switchFacility('cash')" type="button">Cash loan</button>
+        <button id="btnTabPurchase" onclick="switchFacility('purchase')" type="button">Purchase</button>
+      </div>
+
+      <!-- Quick Scenarios Carousel -->
+      <section class="scenario-section">
+        <div class="section-label">
+          <span>Quick scenarios</span>
+        </div>
+        <div class="scenario-scroll" id="scenarioScroll"></div>
+      </section>
+
+      <!-- Main Workspace Grid -->
+      <div class="workspace-grid">
+        <!-- Left: Form Panel -->
+        <section class="glass-panel form-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Application details</span>
+              <h3 id="panelSubtitle">Cash loan request</h3>
+            </div>
+          </div>
+
+          <!-- Section 1: Member -->
+          <div class="form-section">
+            <p class="form-section-title">Member Details</p>
+            <div class="field-grid">
+              <div class="field">
+                <span>Staff ID / Empl. No</span>
+                <div class="search-field-wrap">
+                  <div class="search-field">
+                    <input id="inp_staff" placeholder="e.g. 0000 or LIRS/0000" autocomplete="off" />
+                    <button type="button" id="btn_search" onclick="fetchMember()" aria-label="Fetch member" title="Fetch from Google Sheet">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="suggestions-dropdown" id="staffSuggestions" style="display: none;"></div>
+                </div>
+                <div class="lookup-status" id="lookupStatus" style="display: none;"></div>
+              </div>
+              <div class="field">
+                <span>Member name</span>
+                <div class="search-field-wrap">
+                  <div class="search-field">
+                    <input id="inp_name" placeholder="Full name or search" autocomplete="off" />
+                    <button type="button" id="btn_search_name" onclick="fetchMemberByName()" aria-label="Search by name" title="Search member by name">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="suggestions-dropdown" id="nameSuggestions" style="display: none;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Balances -->
+          <div class="form-section">
+            <p class="form-section-title">Current Balances</p>
+            <div class="field-grid">
+              <label class="field">
+                <span>Current savings (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_savings" placeholder="0" class="money-input" />
+              </label>
+              <label class="field">
+                <span>Loan outstanding (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_existingLoan" placeholder="0" class="money-input" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 3: Payslip -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <p class="form-section-title">Payroll &amp; Deductions</p>
+              <div class="cap-toggle-wrap">
+                <span class="cap-toggle-label">Cap</span>
+                <div class="pill-toggle cap-toggle" role="group" aria-label="Salary deduction cap">
+                  <button type="button" id="btnCap40" class="active" onclick="setDeductionCap(0.40)" title="Default 40% salary deduction cap">40%</button>
+                  <button type="button" id="btnCap50" onclick="setDeductionCap(0.50)" title="Special 50% salary deduction cap">50%</button>
+                </div>
+                <div class="custom-cap-wrap">
+                  <button type="button" id="btnCapCustom" class="cap-pencil-btn" onclick="toggleCustomCapInput()" title="Set custom salary deduction cap (e.g. 53%)" aria-label="Set custom cap">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                    </svg>
+                  </button>
+                  <div class="custom-cap-popover" id="customCapPopover" style="display: none;">
+                    <div class="custom-cap-row">
+                      <input type="number" id="inp_customCap" min="10" max="90" step="1" placeholder="53" class="custom-cap-input" />
+                      <span class="custom-cap-pct">%</span>
+                      <button type="button" class="custom-cap-apply-btn" onclick="applyCustomCap()" title="Apply custom cap">Apply</button>
+                      <button type="button" class="custom-cap-close-btn" onclick="toggleCustomCapInput(false)" title="Close">✕</button>
+                    </div>
+                  </div>
+                  <div class="custom-cap-badge" id="customCapBadge" style="display: none;">
+                    <span id="customCapBadgeText">53%</span>
+                    <button type="button" class="custom-cap-reset-btn" onclick="resetCustomCap()" title="Reset cap to default 40%" aria-label="Reset cap">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span>Gross monthly salary (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_gross" placeholder="0" class="money-input" />
+              </label>
+              <label class="field">
+                <span>Total monthly deductions (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_totalBank" placeholder="0" class="money-input" />
+              </label>
+            </div>
+            <div class="field-grid secondary-fields" id="cashCoopDedWrap">
+              <label class="field">
+                <span>Current coop deduction (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_coopDed" placeholder="0" class="money-input" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 4: Other Deductions & Savings -->
+          <div class="form-section" id="cashOtherDeductionsSection">
+            <p class="form-section-title">Other Deductions &amp; Savings</p>
+            <div class="field-grid">
+              <label class="field">
+                <span>Monthly savings contribution (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_monthlySavings" value="10,000" placeholder="10,000" class="money-input" />
+              </label>
+              <label class="field">
+                <span>Other monthly deductions (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_otherDed" placeholder="0" class="money-input" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 5: Request -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <p class="form-section-title">Request Details</p>
+              <label class="inquiry-toggle">
+                <input type="checkbox" id="chk_inquiry" onchange="toggleInquiryMode()" />
+                <span></span>
+                Capacity only
+              </label>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span id="labelRequested">Amount requested (₦)</span>
+                <input type="text" inputmode="decimal" id="inp_requested" placeholder="Enter amount" class="money-input" />
+              </label>
+              <label class="field">
+                <span id="labelDuration">Duration (1–24 months)</span>
+                <input type="number" id="inp_duration" value="3" min="1" max="24" />
+              </label>
+            </div>
+            <div class="down-payment" id="purchaseDownPaymentWrap" style="display: none;">
+              <span>Down payment</span>
+              <div>
+                <button type="button" id="btnDp30" onclick="setDownPayment(true)">30%</button>
+                <button type="button" id="btnDpZero" class="active" onclick="setDownPayment(false)">Zero</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="primary-button calculate" onclick="calculateEligibility()" type="button">
+            Calculate eligibility
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </section>
+
+        <!-- Right: Results Panel -->
+        <section class="glass-panel result-panel" id="resultPanel" aria-live="polite">
+          <div class="empty-result">
+            <div class="empty-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+            <span class="eyebrow">Ready to assess</span>
+            <h3>Your result will appear here.</h3>
+            <p>Enter member details or choose a quick scenario to run an eligibility check.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- App Footer -->
+      <footer class="app-footer">
+        <div class="footer-notice">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Confidential &bull; For internal use only</span>
+        </div>
+        <div class="footer-credit">
+          <span>Designed &amp; Developed by</span>
+          <a href="https://adebayosystems.com.ng" target="_blank" rel="noopener noreferrer">Adebayo Systems</a>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Floating Clear Button (Always within screen regardless of scroll) -->
+    <button class="floating-clear-button" id="btnClear" onclick="resetForm()" type="button" aria-label="Clear desk" title="Clear desk &amp; reset all inputs">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+        <path d="M22 21H7"></path>
+        <path d="m5 11 9 9"></path>
+      </svg>
+      <span>Clear</span>
+    </button>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
